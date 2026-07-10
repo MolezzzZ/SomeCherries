@@ -1,0 +1,33 @@
+name: cherry_token_monitor
+description: A cross-platform floating desktop pet that visualizes Claude Code token burn rate as a grid of cartoon cherries being eaten.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  window_manager: ^0.4.2
+  tray_manager: ^0.3.2
+  sqlite3: ^2.4.6
+  path_provider: ^2.1.4
+  path: ^1.9.0
+  sqlite3_flutter_libs: ^0.6.0+eol
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/cherry.png
+    - assets/cherry.ico
+    - assets/cherry_pair.png
+  fonts:
+    - family: ZCOOLKuaiLe
+      fonts:
+        - asset: assets/fonts/ZCOOLKuaiLe-Regular.ttf

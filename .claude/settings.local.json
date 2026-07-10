@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter --version)",
+      "Bash(dart --version)",
+      "Bash(flutter config *)",
+      "Bash([ -e \"$p/bin/flutter\" ])",
+      "Read(//c/Users/admin/**)",
+      "Read(//c/Users/admin/AppData/Local/**)",
+      "Bash(find /c -maxdepth 3 -name \"flutter.bat\")",
+      "Bash(echo \"=== any flutter.bat on C \\(maxdepth 4\\) ===\"; find /c -maxdepth 4 -iname \"flutter.bat\" 2>/dev/null | head; echo \"=== any flutter exe ===\"; find /c -maxdepth 4 -iname \"flutter\" -type f 2>/dev/null | head; echo \"=== Android Studio / VS hints ===\"; ls \"/c/Program Files/Android\" 2>/dev/null; ls ~/AppData/Local/Android 2>/dev/null | head; echo \"done\")",
+      "Read(//c/Program Files \\(x86\\)/Microsoft Visual Studio/**)",
+      "Bash(\"/c/Program Files \\(x86\\)/Microsoft Visual Studio/Installer/vswhere.exe\" -products '*' -latest -property displayName)",
+      "Bash(python -)",
+      "Bash(echo \"---exit:$?---\")",
+      "Bash(export PATH=\"/c/flutter/flutter/bin:$PATH\")",
+      "Bash(flutter doctor *)",
+      "Bash(cp pubspec.yaml pubspec.yaml.mine)",
+      "Bash(flutter create *)",
+      "Bash(flutter pub *)",
+      "Bash(python -c \"import PIL; print\\('PIL', PIL.__version__\\)\")",
+      "Bash(python -c \"import cairosvg\")",
+      "Bash(flutter analyze *)",
+      "Bash(flutter test *)",
+      "Bash(python -c ' *)",
+      "Bash(flutter build *)",
+      "Bash(reg query *)",
+      "WebSearch",
+      "Bash(./build/windows/x64/runner/Debug/cherry_token_monitor.exe)",
+      "Bash(tasklist)",
+      "Bash(taskkill //PID 70332 //F)",
+      "Bash(tasklist //FI \"IMAGENAME eq cherry_token_monitor.exe\")",
+      "Bash(curl -sL -o assets/fonts/ZCOOLKuaiLe-Regular.ttf \"https://github.com/google/fonts/raw/main/ofl/zcoolkuaile/ZCOOLKuaiLe-Regular.ttf\")",
+      "Bash(xxd)",
+      "Bash(curl -sL --connect-timeout 20 -o assets/fonts/ZCOOLKuaiLe-Regular.ttf \"https://cdn.jsdelivr.net/gh/google/fonts/ofl/zcoolkuaile/ZCOOLKuaiLe-Regular.ttf\")",
+      "Bash(curl -sL --connect-timeout 20 \"https://api.github.com/repos/google/fonts/contents/ofl/zcoolkuaile\")",
+      "Bash(curl -sL --connect-timeout 20 --retry 3 --retry-delay 2 -o assets/fonts/ZCOOLKuaiLe-Regular.ttf \"https://raw.githubusercontent.com/google/fonts/main/ofl/zcoolkuaile/ZCOOLKuaiLe-Regular.ttf\")",
+      "Bash(taskkill //IM cherry_token_monitor.exe //F)",
+      "Bash(start \"\" \"build/windows/x64/runner/Debug/cherry_token_monitor.exe\")",
+      "Bash(taskkill //F //IM cherry_token_monitor.exe)"
+    ]
+  }
+}
