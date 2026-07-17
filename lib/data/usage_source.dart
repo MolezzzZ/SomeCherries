@@ -51,3 +51,9 @@ DateTime periodStart(UsagePeriod period, DateTime now) {
       return DateTime.fromMillisecondsSinceEpoch(0);
   }
 }
+
+/// Resolves either a calendar boundary or a rolling-window boundary.
+DateTime queryStart(UsageQuery query, DateTime now) =>
+    query.rollingWindow == null
+        ? periodStart(query.period, now)
+        : now.subtract(query.rollingWindow!);

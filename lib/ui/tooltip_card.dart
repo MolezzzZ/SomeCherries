@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/l10n.dart';
+import '../app/settings.dart';
 import '../domain/cherry_state.dart';
 import '../domain/usage.dart';
 
@@ -8,12 +9,18 @@ import '../domain/usage.dart';
 class TooltipCard extends StatelessWidget {
   final UsageSnapshot snapshot;
   final CherryState cherry;
+  final int recentTokens;
+  final double dailyCostUsd;
+  final UsageAlertConfig alerts;
   final L10n l10n;
 
   const TooltipCard({
     super.key,
     required this.snapshot,
     required this.cherry,
+    this.recentTokens = 0,
+    this.dailyCostUsd = 0,
+    this.alerts = const UsageAlertConfig(),
     required this.l10n,
   });
 
@@ -33,9 +40,11 @@ class TooltipCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xF21E1116),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE01E37).withValues(alpha: 0.5)),
+        border:
+            Border.all(color: const Color(0xFFE01E37).withValues(alpha: 0.5)),
         boxShadow: const [
-          BoxShadow(color: Colors.black54, blurRadius: 16, offset: Offset(0, 6)),
+          BoxShadow(
+              color: Colors.black54, blurRadius: 16, offset: Offset(0, 6)),
         ],
       ),
       child: DefaultTextStyle(
@@ -53,19 +62,37 @@ class TooltipCard extends StatelessWidget {
               children: [
                 Text('$periodLabel · ${l.burn}',
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF8FA0))),
+                        fontWeight: FontWeight.bold, color: Color(0xFFFF8FA0))),
                 Text('\$${snapshot.totalCostUsd.toStringAsFixed(2)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.white)),
               ],
             ),
             const SizedBox(height: 6),
-            _line(l.cherriesEaten,
+            _line(
+                l.cherriesEaten,
                 '${cherry.eatenOnPlate}/${cherry.config.cherriesPerPlate}'
                 '${cherry.round > 0 ? '  ${l.plateSuffix(cherry.round + 1)}' : ''}'),
             _line(l.perCherryShort,
                 '\$${cherry.config.dollarsPerCherry.toStringAsFixed(2)}'),
+            const Divider(height: 14, color: Colors.white24),
+            Text(l.warningLights,
+                style: const TextStyle(
+                    color: Color(0xFFE0B6D3), fontWeight: FontWeight.bold)),
+            _line(
+              l.currentPlates,
+              '${(cherry.periodCost / cherry.config.dollarsPerPlate).toStringAsFixed(1)}'
+              ' / ${alerts.maxPlates.toStringAsFixed(0)} ${l.platesUnit}',
+            ),
+            _line(
+              l.halfHourSpeed,
+              '${_fmt(recentTokens)} / ${_fmt(alerts.halfHourTokenLimit)}',
+            ),
+            _line(
+              l.dailySpend,
+              '\$${dailyCostUsd.toStringAsFixed(2)} / '
+              '\$${alerts.dailyCostLimitUsd.toStringAsFixed(0)}',
+            ),
             const Divider(height: 14, color: Colors.white24),
             _line(l.tokIn, _fmt(snapshot.totalInput)),
             _line(l.tokOut, _fmt(snapshot.totalOutput)),
@@ -96,7 +123,9 @@ class TooltipCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(child: Text(label, style: style, overflow: TextOverflow.ellipsis)),
+          Flexible(
+              child:
+                  Text(label, style: style, overflow: TextOverflow.ellipsis)),
           const SizedBox(width: 10),
           Text(value, style: style),
         ],

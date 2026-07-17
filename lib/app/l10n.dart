@@ -89,6 +89,17 @@ class L10n {
   String get tokCacheWrite => _('Cache write', '缓存写');
   String get tokTotal => _('Total tokens', '总 token');
 
+  // Usage warning lights
+  String get warningLights => _('Usage lights', '用量告警灯');
+  String get currentPlates => _('Current usage', '当前用量');
+  String get halfHourSpeed => _('Last 30 min', '近 30 分钟');
+  String get dailySpend => _('Today total', '今日总消费');
+  String get alertThresholds => _('Warning light thresholds', '告警灯阈值');
+  String get maxPlates => _('Usage ceiling', '用量上限');
+  String get halfHourTokenLimit => _('30-min token ceiling', '30 分钟 token 上限');
+  String get dailyCostLimit => _('Daily cost ceiling', '每日消费上限');
+  String get platesUnit => _('plates', '盘');
+
   // Tray / context menu
   String get enableClickThrough => _('Enable click-through', '开启点击穿透');
   String get disableClickThrough => _('Disable click-through', '关闭点击穿透');

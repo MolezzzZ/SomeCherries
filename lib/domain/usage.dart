@@ -9,6 +9,11 @@ class UsageQuery {
   final UsagePeriod period;
   final UsageScope scope;
 
+  /// When set, use a rolling window ending at the time of the read instead of
+  /// the calendar boundary described by [period]. This is used by the speed
+  /// warning light without adding a user-selectable pseudo-period.
+  final Duration? rollingWindow;
+
   /// Only used when [scope] is currentProject. The cwd whose sessions we count.
   final String? projectPath;
 
@@ -16,17 +21,20 @@ class UsageQuery {
     this.period = UsagePeriod.day,
     this.scope = UsageScope.global,
     this.projectPath,
+    this.rollingWindow,
   });
 
   UsageQuery copyWith({
     UsagePeriod? period,
     UsageScope? scope,
     String? projectPath,
+    Duration? rollingWindow,
   }) =>
       UsageQuery(
         period: period ?? this.period,
         scope: scope ?? this.scope,
         projectPath: projectPath ?? this.projectPath,
+        rollingWindow: rollingWindow ?? this.rollingWindow,
       );
 }
 
@@ -67,19 +75,15 @@ class UsageSnapshot {
     required this.byModel,
   });
 
-  double get totalCostUsd =>
-      byModel.fold(0.0, (sum, m) => sum + m.costUsd);
+  double get totalCostUsd => byModel.fold(0.0, (sum, m) => sum + m.costUsd);
 
-  int get totalInput =>
-      byModel.fold(0, (sum, m) => sum + m.inputTokens);
-  int get totalOutput =>
-      byModel.fold(0, (sum, m) => sum + m.outputTokens);
+  int get totalInput => byModel.fold(0, (sum, m) => sum + m.inputTokens);
+  int get totalOutput => byModel.fold(0, (sum, m) => sum + m.outputTokens);
   int get totalCacheRead =>
       byModel.fold(0, (sum, m) => sum + m.cacheReadTokens);
   int get totalCacheCreation =>
       byModel.fold(0, (sum, m) => sum + m.cacheCreationTokens);
-  int get totalTokens =>
-      byModel.fold(0, (sum, m) => sum + m.totalTokens);
+  int get totalTokens => byModel.fold(0, (sum, m) => sum + m.totalTokens);
 
   static UsageSnapshot empty(UsagePeriod period, DateTime periodStart) =>
       UsageSnapshot(

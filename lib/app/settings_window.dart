@@ -41,6 +41,9 @@ class _SettingsWindowState extends State<SettingsWindow> {
   late double _scale;
   late double _opacity;
   late int _poll;
+  late double _maxPlates;
+  late int _halfHourTokenLimit;
+  late double _dailyCostLimitUsd;
 
   late AppLanguage _language;
   late ModelPrice _opus;
@@ -68,6 +71,9 @@ class _SettingsWindowState extends State<SettingsWindow> {
     _scale = s.scale;
     _opacity = s.opacity;
     _poll = s.pollSeconds;
+    _maxPlates = s.alerts.maxPlates;
+    _halfHourTokenLimit = s.alerts.halfHourTokenLimit;
+    _dailyCostLimitUsd = s.alerts.dailyCostLimitUsd;
     _language = s.language;
     _opus = s.pricing.opus;
     _sonnet = s.pricing.sonnet;
@@ -127,6 +133,11 @@ class _SettingsWindowState extends State<SettingsWindow> {
         sonnet: _sonnet,
         haiku: _haiku,
         overrides: overrides,
+      ),
+      alerts: UsageAlertConfig(
+        maxPlates: _maxPlates,
+        halfHourTokenLimit: _halfHourTokenLimit,
+        dailyCostLimitUsd: _dailyCostLimitUsd,
       ),
       period: _period,
       scope: _scope,
@@ -257,6 +268,37 @@ class _SettingsWindowState extends State<SettingsWindow> {
                       icon: const Icon(Icons.add, size: 16),
                       label: Text(l.addModel),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  _sectionTitle(l.alertThresholds),
+                  _slider(
+                    label: l.maxPlates,
+                    value: _maxPlates,
+                    min: 1,
+                    max: 50,
+                    divisions: 49,
+                    display: '${_maxPlates.round()} ${l.platesUnit}',
+                    onChanged: (v) => setState(() => _maxPlates = v),
+                  ),
+                  _slider(
+                    label: l.halfHourTokenLimit,
+                    value: _halfHourTokenLimit / 1000000,
+                    min: 1,
+                    max: 100,
+                    divisions: 99,
+                    display: '${(_halfHourTokenLimit / 1000000).round()}M',
+                    onChanged: (v) => setState(
+                      () => _halfHourTokenLimit = v.round() * 1000000,
+                    ),
+                  ),
+                  _slider(
+                    label: l.dailyCostLimit,
+                    value: _dailyCostLimitUsd,
+                    min: 1,
+                    max: 500,
+                    divisions: 499,
+                    display: '\$${_dailyCostLimitUsd.round()}',
+                    onChanged: (v) => setState(() => _dailyCostLimitUsd = v),
                   ),
                   const SizedBox(height: 16),
                   _sectionTitle(l.appearance),

@@ -31,6 +31,13 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/dist/
+
+# Legacy local Windows test bundle.
+/cherry_token_monitor.exe
+/*.dll
+/native_assets.json
+/data/
 /coverage/
 
 # Symbolication related

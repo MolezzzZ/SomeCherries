@@ -1,12 +1,18 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'package:cherry_token_monitor/data/ccswitch_source.dart';
+import 'package:cherry_token_monitor/data/usage_source.dart';
+import 'package:cherry_token_monitor/app/settings.dart';
 import 'package:cherry_token_monitor/domain/cherry_state.dart';
 import 'package:cherry_token_monitor/domain/pricing.dart';
 import 'package:cherry_token_monitor/domain/usage.dart';
+import 'package:cherry_token_monitor/ui/cherry.dart';
+import 'package:cherry_token_monitor/ui/slow_burn.dart';
+import 'package:cherry_token_monitor/ui/usage_warning_lights.dart';
 
 void main() {
   group('CherryState.fromCost', () {
@@ -46,6 +52,159 @@ void main() {
       final s = CherryState.fromCost(10.0, config);
       expect(s.round, 1);
       expect(s.eatenOnPlate, 0);
+    });
+  });
+
+  group('SlowBurn', () {
+    test('keeps movement longer than the polling interval', () {
+      expect(
+        slowBurnDuration(
+          remainingCost: 0.05,
+          dollarsPerCherry: 0.5,
+          pollSeconds: 3,
+        ),
+        const Duration(milliseconds: 4200),
+      );
+    });
+
+    testWidgets('starts from the current value and burns toward new usage',
+        (tester) async {
+      Widget app({required double cost, required int tokens}) {
+        return MaterialApp(
+          home: SlowBurn(
+            targetCost: cost,
+            totalTokens: tokens,
+            dollarsPerCherry: 0.5,
+            pollSeconds: 3,
+            builder: (_, displayedCost) => Text(displayedCost.toString()),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(app(cost: 1, tokens: 100));
+      expect(find.text('1.0'), findsOneWidget);
+
+      await tester.pumpWidget(app(cost: 1.5, tokens: 200));
+      await tester.pump(const Duration(milliseconds: 2100));
+      final halfway =
+          double.parse(tester.widget<Text>(find.byType(Text)).data!);
+      expect(halfway, greaterThan(1));
+      expect(halfway, lessThan(1.5));
+
+      await tester.pump(const Duration(milliseconds: 2200));
+      expect(find.text('1.5'), findsOneWidget);
+    });
+  });
+
+  testWidgets('cherry painter supports partial nibble states', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: RepaintBoundary(
+          child: Cherry(
+            status: CherryStatus.eating,
+            bite: 0.55,
+            size: 54,
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  group('usage warning lights', () {
+    test('alert thresholds survive a settings JSON round-trip', () {
+      const settings = AppSettings(
+        alerts: UsageAlertConfig(
+          maxPlates: 12,
+          halfHourTokenLimit: 25000000,
+          dailyCostLimitUsd: 80,
+        ),
+      );
+      final restored = AppSettings.fromJson(settings.toJson());
+      expect(restored.alerts.maxPlates, 12);
+      expect(restored.alerts.halfHourTokenLimit, 25000000);
+      expect(restored.alerts.dailyCostLimitUsd, 80);
+    });
+
+    test('30-minute query uses a rolling boundary', () {
+      final now = DateTime(2026, 7, 16, 15, 30);
+      final start = queryStart(
+        const UsageQuery(
+          period: UsagePeriod.day,
+          rollingWindow: Duration(minutes: 30),
+        ),
+        now,
+      );
+      expect(start, DateTime(2026, 7, 16, 15));
+    });
+
+    testWidgets('renders all three textured lamp segments', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Center(
+            child: SizedBox(
+              width: 280,
+              child: UsageWarningLights(
+                currentPlates: 4,
+                recentTokens: 12000000,
+                dailyCostUsd: 25,
+                config: UsageAlertConfig(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.getSize(find.byType(UsageWarningLights)).height, 14);
+      expect(
+        tester.getSize(find.byType(FractionallySizedBox)).width,
+        closeTo(257.6, 0.1),
+      );
+      final lamps = find.descendant(
+        of: find.byType(UsageWarningLights),
+        matching: find.byType(CustomPaint),
+      );
+      expect(lamps, findsNWidgets(3));
+      expect(tester.getSize(lamps.at(0)).width, closeTo(103.0, 0.2));
+      expect(tester.getSize(lamps.at(1)).width, closeTo(59.2, 0.2));
+      expect(
+        tester.getRect(lamps.at(1)).left - tester.getRect(lamps.at(0)).right,
+        closeTo(12.9, 0.2),
+      );
+      expect(
+        tester.getRect(lamps.at(2)).left - tester.getRect(lamps.at(1)).right,
+        closeTo(12.9, 0.2),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('keeps repainting an over-limit lamp for slow breathing',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Center(
+            child: SizedBox(
+              width: 280,
+              child: UsageWarningLights(
+                currentPlates: 10,
+                recentTokens: 20000000,
+                dailyCostUsd: 50,
+                config: UsageAlertConfig(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      final paints = find.descendant(
+        of: find.byType(UsageWarningLights),
+        matching: find.byType(CustomPaint),
+      );
+      final before = tester.widget<CustomPaint>(paints.at(1)).painter!;
+      await tester.pump(const Duration(milliseconds: 600));
+      final after = tester.widget<CustomPaint>(paints.at(1)).painter!;
+      expect(after.shouldRepaint(before), isTrue);
+      expect(tester.binding.hasScheduledFrame, isTrue);
     });
   });
 

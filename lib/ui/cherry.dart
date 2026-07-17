@@ -34,17 +34,10 @@ class Cherry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(end: _targetEaten),
-      duration: const Duration(milliseconds: 620),
-      curve: Curves.easeOutCubic,
-      builder: (context, eaten, _) {
-        return SizedBox(
-          width: size,
-          height: size * 1.234,
-          child: CustomPaint(painter: _CherryPainter(eaten: eaten)),
-        );
-      },
+    return SizedBox(
+      width: size,
+      height: size * 1.234,
+      child: CustomPaint(painter: _CherryPainter(eaten: _targetEaten)),
     );
   }
 }
@@ -93,8 +86,24 @@ class _CherryPainter extends CustomPainter {
         Offset(w * 0.66, h * 0.40), stemAlpha);
     _drawTop(canvas, top, fork, stemAlpha);
 
-    _drawCherry(canvas, right, r, side: 1, alpha: fruitAlpha, ghost: ghost);
-    _drawCherry(canvas, left, r, side: -1, alpha: fruitAlpha, ghost: ghost);
+    _drawCherry(
+      canvas,
+      right,
+      r,
+      side: 1,
+      progress: (eaten / 0.58).clamp(0.0, 1.0),
+      alpha: fruitAlpha,
+      ghost: ghost,
+    );
+    _drawCherry(
+      canvas,
+      left,
+      r,
+      side: -1,
+      progress: ((eaten - 0.36) / 0.64).clamp(0.0, 1.0),
+      alpha: fruitAlpha,
+      ghost: ghost,
+    );
   }
 
   void _drawShadow(Canvas canvas, double w, double h, double t) {
@@ -230,28 +239,39 @@ class _CherryPainter extends CustomPainter {
     Offset center,
     double r, {
     required int side,
+    required double progress,
     required double alpha,
     required bool ghost,
   }) {
     final fruit = _fruitPath(center, r);
-    if (ghost) {
+    if (ghost || progress >= 0.90) {
       _drawEatenOutline(canvas, fruit, r);
       return;
     }
 
+    final remainingFruit = _nibbledFruitPath(
+      fruit,
+      center,
+      r,
+      side: side,
+      progress: progress,
+    );
+
+    final fadeNearEmpty = ((progress - 0.78) / 0.12).clamp(0.0, 1.0) * 0.45;
+    final visibleAlpha = alpha * (1 - fadeNearEmpty);
     final bounds = fruit.getBounds().inflate(r * 0.16);
     canvas.saveLayer(bounds, Paint());
     canvas.drawPath(
-      fruit,
+      remainingFruit,
       Paint()
         ..shader = RadialGradient(
           center: const Alignment(-0.38, -0.45),
           radius: 1.05,
           colors: [
-            _redWax.withValues(alpha: alpha),
-            _redHot.withValues(alpha: alpha),
-            _redMid.withValues(alpha: alpha),
-            _redDeep.withValues(alpha: alpha),
+            _redWax.withValues(alpha: visibleAlpha),
+            _redHot.withValues(alpha: visibleAlpha),
+            _redMid.withValues(alpha: visibleAlpha),
+            _redDeep.withValues(alpha: visibleAlpha),
           ],
           stops: const [0.0, 0.28, 0.67, 1.0],
         ).createShader(bounds),
@@ -259,34 +279,43 @@ class _CherryPainter extends CustomPainter {
 
     _drawWaxLines(
       canvas,
-      fruit,
-      _pinkWax.withValues(alpha: 0.28 * alpha),
+      remainingFruit,
+      _pinkWax.withValues(alpha: 0.28 * visibleAlpha),
       bounds,
       8,
       slope: -0.38,
     );
     _drawWaxLines(
       canvas,
-      fruit,
-      _redInk.withValues(alpha: 0.18 * alpha),
+      remainingFruit,
+      _redInk.withValues(alpha: 0.18 * visibleAlpha),
       bounds,
       6,
       slope: -0.30,
       yOffset: r * 0.18,
     );
-    _drawHighlight(canvas, center, r, alpha);
-    if (eaten > 0.02) _clearWipe(canvas, center, r);
+    canvas.save();
+    canvas.clipPath(remainingFruit);
+    _drawHighlight(canvas, center, r, visibleAlpha);
+    canvas.restore();
     canvas.restore();
 
-    _strokeSketch(canvas, fruit, _redInk.withValues(alpha: 0.96), 2.45,
-        passes: 2);
+    _strokeSketch(
+      canvas,
+      fruit,
+      _redInk.withValues(alpha: 0.96),
+      2.45,
+      passes: 2,
+    );
     _strokeSketch(
       canvas,
       fruit.shift(Offset(-r * 0.03, -r * 0.035)),
       _redWax.withValues(alpha: 0.36),
       0.9,
     );
-    if (eaten > 0.04) _drawWipeEdge(canvas, fruit, center, r);
+    if (progress > 0.005) {
+      _drawBiteFront(canvas, fruit, center, r, side, progress);
+    }
   }
 
   Path _fruitPath(Offset c, double r) {
@@ -328,65 +357,103 @@ class _CherryPainter extends CustomPainter {
     );
   }
 
-  double _wipeBoundary(Offset c, double r) {
-    final t = eaten.clamp(0.0, 1.0);
-    return c.dy - r * 0.92 + t * r * 2.04;
+  Path _nibbledFruitPath(
+    Path fruit,
+    Offset center,
+    double r, {
+    required int side,
+    required double progress,
+  }) {
+    final mask = _biteMask(center, r, side, progress);
+    return Path.combine(PathOperation.difference, fruit, mask);
   }
 
-  double _wipeY(double x, Offset c, double r) {
-    return _wipeBoundary(c, r) + (x - c.dx) * 0.34;
-  }
-
-  Path _wipePath(Offset c, double r) {
-    final left = c.dx - r * 1.18;
-    final right = c.dx + r * 1.18;
-    final top = c.dy - r * 1.16;
-    final yLeft = _wipeY(left, c, r);
-    final yRight = _wipeY(right, c, r);
-    return Path()
-      ..moveTo(left, top)
-      ..lineTo(right, top)
-      ..lineTo(right, yRight)
-      ..quadraticBezierTo(c.dx, _wipeY(c.dx, c, r) - r * 0.08, left, yLeft)
+  Path _biteMask(Offset center, double r, int side, double progress) {
+    final outsideX = center.dx + side * r * 1.45;
+    final baseX =
+        center.dx + side * r * (1.16 - progress.clamp(0.0, 1.0) * 2.32);
+    final top = center.dy - r * 1.20;
+    final bottom = center.dy + r * 1.20;
+    final mask = Path()
+      ..moveTo(outsideX, top)
+      ..lineTo(baseX, top);
+    _traceBiteFront(mask, center, r, side, progress);
+    mask
+      ..lineTo(outsideX, bottom)
       ..close();
+    return mask;
   }
 
-  void _clearWipe(Canvas canvas, Offset c, double r) {
-    final clear = Paint()..blendMode = BlendMode.clear;
-    canvas.drawPath(_wipePath(c, r), clear);
+  Path _biteFront(Offset center, double r, int side, double progress) {
+    final path = Path();
+    _traceBiteFront(path, center, r, side, progress, moveToStart: true);
+    return path;
   }
 
-  void _drawWipeEdge(Canvas canvas, Path fruit, Offset c, double r) {
-    canvas.save();
-    canvas.clipPath(fruit);
-    final left = c.dx - r * 1.08;
-    final right = c.dx + r * 1.08;
-    final path = Path()
-      ..moveTo(left, _wipeY(left, c, r))
+  void _traceBiteFront(
+    Path path,
+    Offset center,
+    double r,
+    int side,
+    double progress, {
+    bool moveToStart = false,
+  }) {
+    final t = progress.clamp(0.0, 1.0);
+    final baseX = center.dx + side * r * (1.16 - t * 2.32);
+    final biteDepth =
+        r * 0.25 * Curves.easeOutCubic.transform((t * 9).clamp(0.0, 1.0));
+    final top = center.dy - r * 1.20;
+    if (moveToStart) path.moveTo(baseX, top);
+    path
       ..quadraticBezierTo(
-        c.dx - r * 0.35,
-        _wipeY(c.dx - r * 0.35, c, r) - r * 0.08,
-        c.dx,
-        _wipeY(c.dx, c, r),
+        baseX - side * biteDepth * 0.82,
+        center.dy - r * 0.84,
+        baseX,
+        center.dy - r * 0.48,
       )
       ..quadraticBezierTo(
-        c.dx + r * 0.45,
-        _wipeY(c.dx + r * 0.45, c, r) + r * 0.07,
-        right,
-        _wipeY(right, c, r),
+        baseX - side * biteDepth * 0.62,
+        center.dy - r * 0.20,
+        baseX,
+        center.dy + r * 0.08,
+      )
+      ..quadraticBezierTo(
+        baseX - side * biteDepth,
+        center.dy + r * 0.39,
+        baseX,
+        center.dy + r * 0.70,
+      )
+      ..quadraticBezierTo(
+        baseX - side * biteDepth * 0.68,
+        center.dy + r * 0.95,
+        baseX,
+        center.dy + r * 1.20,
       );
+  }
+
+  void _drawBiteFront(
+    Canvas canvas,
+    Path fruit,
+    Offset center,
+    double r,
+    int side,
+    double progress,
+  ) {
+    canvas.save();
+    canvas.clipPath(fruit);
+    final front = _biteFront(center, r, side, progress);
     _strokeSketch(
       canvas,
-      path,
-      _redInk.withValues(alpha: 0.82),
-      math.max(1.2, r * 0.095),
+      front,
+      _redInk.withValues(alpha: 0.88),
+      math.max(1.2, r * 0.10),
       passes: 2,
     );
     _strokeSketch(
       canvas,
-      path.shift(Offset(0, r * 0.06)),
-      _redWax.withValues(alpha: 0.34),
-      math.max(0.8, r * 0.045),
+      front.shift(Offset(side * r * 0.055, 0)),
+      _redWax.withValues(alpha: 0.48),
+      math.max(0.75, r * 0.045),
     );
     canvas.restore();
   }

@@ -47,7 +47,7 @@ class ManualSource extends UsageSource {
   @override
   Future<UsageSnapshot> read(UsageQuery query) async {
     final now = DateTime.now();
-    final start = periodStart(query.period, now);
+    final start = queryStart(query, now);
     final f = await _file();
     if (!f.existsSync()) return UsageSnapshot.empty(query.period, start);
 

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.cherrymon" "\0"
-            VALUE "FileDescription", "cherry_token_monitor" "\0"
+            VALUE "CompanyName", "MolezzzZ" "\0"
+            VALUE "FileDescription", "Cherry Token Monitor" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "cherry_token_monitor" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.cherrymon. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 MolezzzZ. All rights reserved." "\0"
             VALUE "OriginalFilename", "cherry_token_monitor.exe" "\0"
-            VALUE "ProductName", "cherry_token_monitor" "\0"
+            VALUE "ProductName", "Cherry Token Monitor" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

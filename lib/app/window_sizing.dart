@@ -7,6 +7,8 @@ import 'settings.dart';
 const double kBaseCherrySize = 54;
 const double kCherrySpacing = 4;
 const double kOuterPadding = 12;
+const double kWarningLightsHeight = 14;
+const double kWarningLightsGap = 4;
 
 /// A cherry cell renders a *pair* sprite (286 × 353), so it's taller than the
 /// base size. These must match the SizedBox in [Cherry.build] and the sprite's
@@ -28,12 +30,21 @@ Size gridPixelSize(AppSettings s) {
   return Size(w, h);
 }
 
+Size overlayContentPixelSize(AppSettings s) {
+  final grid = gridPixelSize(s);
+  return Size(
+    grid.width,
+    grid.height + (kWarningLightsHeight + kWarningLightsGap) * s.scale,
+  );
+}
+
 /// Normal overlay window: only the cherry plate exists, so transparent space
 /// above it does not intercept clicks intended for applications underneath.
 Size computeWindowSize(AppSettings s) {
-  final grid = gridPixelSize(s);
-  final w = (grid.width + kOuterPadding * 2).clamp(kMinWidth, 1200).toDouble();
-  final h = grid.height + kOuterPadding * 2;
+  final content = overlayContentPixelSize(s);
+  final w =
+      (content.width + kOuterPadding * 2).clamp(kMinWidth, 1200).toDouble();
+  final h = content.height + kOuterPadding * 2;
   return Size(w, h);
 }
 

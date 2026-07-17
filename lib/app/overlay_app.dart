@@ -15,7 +15,9 @@ import '../data/usage_source.dart';
 import '../domain/cherry_state.dart';
 import '../domain/usage.dart';
 import '../ui/cherry_grid.dart';
+import '../ui/slow_burn.dart';
 import '../ui/tooltip_card.dart';
+import '../ui/usage_warning_lights.dart';
 import 'l10n.dart';
 import 'settings.dart';
 import 'settings_window.dart';
@@ -70,6 +72,9 @@ class _OverlayHomeState extends State<OverlayHome>
   StreamSubscription<UsageSnapshot>? _sub;
 
   UsageSnapshot? _snapshot;
+  UsageSnapshot? _recentSnapshot;
+  UsageSnapshot? _dailySnapshot;
+  int _alertRequestSerial = 0;
   bool _hovering = false;
   bool _clickThrough = false;
   bool _showSettings = false;
@@ -120,12 +125,46 @@ class _OverlayHomeState extends State<OverlayHome>
 
   void _startPolling() {
     _sub?.cancel();
-    _sub = _source
-        .watch(_settings.query,
-            interval: Duration(seconds: _settings.pollSeconds))
+    final source = _source;
+    final query = _settings.query;
+    _sub = source
+        .watch(query, interval: Duration(seconds: _settings.pollSeconds))
         .listen((snap) {
-      if (mounted) setState(() => _snapshot = snap);
+      if (!mounted || source != _source) return;
+      setState(() => _snapshot = snap);
+      _refreshAlertMetrics(source, query, snap);
     });
+  }
+
+  Future<void> _refreshAlertMetrics(
+    UsageSource source,
+    UsageQuery currentQuery,
+    UsageSnapshot currentSnapshot,
+  ) async {
+    final serial = ++_alertRequestSerial;
+    final base = UsageQuery(
+      period: UsagePeriod.day,
+      scope: currentQuery.scope,
+      projectPath: currentQuery.projectPath,
+    );
+    try {
+      final results = await Future.wait([
+        source.read(base.copyWith(rollingWindow: const Duration(minutes: 30))),
+        currentQuery.period == UsagePeriod.day &&
+                currentQuery.rollingWindow == null
+            ? Future.value(currentSnapshot)
+            : source.read(base),
+      ]);
+      if (!mounted || source != _source || serial != _alertRequestSerial) {
+        return;
+      }
+      setState(() {
+        _recentSnapshot = results[0];
+        _dailySnapshot = results[1];
+      });
+    } catch (_) {
+      // A transient locked/missing data source should not interrupt the plate.
+    }
   }
 
   // ---- Tray -----------------------------------------------------------------
@@ -204,8 +243,13 @@ class _OverlayHomeState extends State<OverlayHome>
 
   Future<void> _setClickThrough(bool on) async {
     _clickThrough = on;
-    await _configureOverlayHitTest(enabled: !on && !_showSettings);
-    await windowManager.setIgnoreMouseEvents(on, forward: true);
+    if (on) {
+      await _configureOverlayHitTest(enabled: false);
+      await windowManager.setIgnoreMouseEvents(true, forward: true);
+    } else {
+      await windowManager.setIgnoreMouseEvents(false);
+      await _configureOverlayHitTest(enabled: !_showSettings);
+    }
     await _refreshTrayMenu();
     if (mounted) setState(() {});
   }
@@ -271,13 +315,13 @@ class _OverlayHomeState extends State<OverlayHome>
 
   Future<void> _configureOverlayHitTest({required bool enabled}) async {
     if (!Platform.isWindows) return;
-    final grid = gridPixelSize(_settings);
+    final content = overlayContentPixelSize(_settings);
     try {
       await _hitTestChannel.invokeMethod<void>('setOverlayHitTest', {
         'enabled': enabled,
         'topPassThroughHeight': kTooltipReserve,
-        'interactiveWidth': grid.width,
-        'interactiveHeight': grid.height,
+        'interactiveWidth': content.width,
+        'interactiveHeight': content.height,
         'bottomPadding': kOuterPadding,
       });
     } catch (_) {
@@ -311,7 +355,7 @@ class _OverlayHomeState extends State<OverlayHome>
     final targetCost = _snapshot?.totalCostUsd ?? 0;
     // Exact state for the tooltip; the plate itself eases toward it (below).
     final cherryState = CherryState.fromCost(targetCost, _settings.cherry);
-    final grid = gridPixelSize(_settings);
+    final content = overlayContentPixelSize(_settings);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -325,33 +369,33 @@ class _OverlayHomeState extends State<OverlayHome>
               Positioned(
                 left: kOuterPadding,
                 right: kOuterPadding,
-                bottom: grid.height + kOuterPadding + 8,
+                bottom: content.height + kOuterPadding + 8,
                 child: IgnorePointer(
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: TooltipCard(
                       snapshot: _snapshot!,
                       cherry: cherryState,
+                      recentTokens: _recentSnapshot?.totalTokens ?? 0,
+                      dailyCostUsd: _dailySnapshot?.totalCostUsd ?? 0,
+                      alerts: _settings.alerts,
                       l10n: L10n(_settings.language),
                     ),
                   ),
                 ),
               ),
-            // Plate sits at the bottom of the window.
+            // Warning lights and plate sit together at the bottom of the window.
             Positioned(
               left: 0,
               right: 0,
               bottom: kOuterPadding,
               child: Center(
-                // Slow "burn": ease the displayed cost toward the latest
-                // snapshot so cherries are nibbled gradually instead of
-                // popping. Each new snapshot re-targets the tween from the
-                // current animated value.
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(end: targetCost),
-                  duration: const Duration(milliseconds: 1800),
-                  curve: Curves.easeOut,
-                  builder: (context, animatedCost, _) {
+                child: SlowBurn(
+                  targetCost: _snapshot?.totalCostUsd,
+                  totalTokens: _snapshot?.totalTokens,
+                  dollarsPerCherry: _settings.cherry.dollarsPerCherry,
+                  pollSeconds: _settings.pollSeconds,
+                  builder: (context, animatedCost) {
                     final animState =
                         CherryState.fromCost(animatedCost, _settings.cherry);
                     return GestureDetector(
@@ -365,10 +409,28 @@ class _OverlayHomeState extends State<OverlayHome>
                       child: MouseRegion(
                         onEnter: (_) => _showTooltipFromPlate(),
                         onExit: (_) => _hideTooltip(),
-                        child: CherryGrid(
-                          state: animState,
-                          cherrySize: kBaseCherrySize * _settings.scale,
-                          spacing: kCherrySpacing,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            UsageWarningLights(
+                              currentPlates:
+                                  _settings.cherry.dollarsPerPlate <= 0
+                                      ? 0
+                                      : animatedCost /
+                                          _settings.cherry.dollarsPerPlate,
+                              recentTokens: _recentSnapshot?.totalTokens ?? 0,
+                              dailyCostUsd: _dailySnapshot?.totalCostUsd ?? 0,
+                              config: _settings.alerts,
+                              scale: _settings.scale,
+                            ),
+                            SizedBox(
+                                height: kWarningLightsGap * _settings.scale),
+                            CherryGrid(
+                              state: animState,
+                              cherrySize: kBaseCherrySize * _settings.scale,
+                              spacing: kCherrySpacing,
+                            ),
+                          ],
                         ),
                       ),
                     );

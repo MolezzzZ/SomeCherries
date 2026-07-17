@@ -323,24 +323,24 @@ void FlutterWindow::SetMousePassThrough(bool enabled) {
     return;
   }
 
-  auto set_transparent = [enabled](HWND hwnd) {
-    if (!hwnd) {
-      return;
-    }
-    LONG_PTR style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-    if (enabled) {
-      style |= WS_EX_TRANSPARENT;
-    } else {
-      style &= ~WS_EX_TRANSPARENT;
-    }
-    SetWindowLongPtr(hwnd, GWL_EXSTYLE, style);
-    SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
-                     SWP_FRAMECHANGED);
-  };
+  HWND hwnd = GetHandle();
+  if (!hwnd) {
+    return;
+  }
 
-  set_transparent(GetHandle());
-  set_transparent(child_window_);
+  LONG_PTR style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+  if (enabled) {
+    // HTTRANSPARENT only forwards hit tests to windows owned by this thread.
+    // A layered transparent top-level window is required for clicks to reach
+    // an application in another process.
+    style |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
+  } else {
+    style &= ~(WS_EX_LAYERED | WS_EX_TRANSPARENT);
+  }
+  SetWindowLongPtr(hwnd, GWL_EXSTYLE, style);
+  SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+               SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
+                   SWP_FRAMECHANGED);
   mouse_pass_through_ = enabled;
 }
 

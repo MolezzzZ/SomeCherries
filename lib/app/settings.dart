@@ -14,6 +14,50 @@ enum InteractionMode {
   clickThrough,
 }
 
+/// Thresholds for the three usage lights above the cherry plate.
+class UsageAlertConfig {
+  /// Current-period consumption expressed in complete plate equivalents.
+  final double maxPlates;
+
+  /// Token volume in the latest rolling 30 minutes that enters alert state.
+  final int halfHourTokenLimit;
+
+  /// Today's billed cost (in the source's USD unit) that enters alert state.
+  final double dailyCostLimitUsd;
+
+  const UsageAlertConfig({
+    this.maxPlates = 10,
+    this.halfHourTokenLimit = 20000000,
+    this.dailyCostLimitUsd = 50,
+  });
+
+  UsageAlertConfig copyWith({
+    double? maxPlates,
+    int? halfHourTokenLimit,
+    double? dailyCostLimitUsd,
+  }) =>
+      UsageAlertConfig(
+        maxPlates: maxPlates ?? this.maxPlates,
+        halfHourTokenLimit: halfHourTokenLimit ?? this.halfHourTokenLimit,
+        dailyCostLimitUsd: dailyCostLimitUsd ?? this.dailyCostLimitUsd,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'maxPlates': maxPlates,
+        'halfHourTokenLimit': halfHourTokenLimit,
+        'dailyCostLimitUsd': dailyCostLimitUsd,
+      };
+
+  factory UsageAlertConfig.fromJson(Map<String, dynamic> json) =>
+      UsageAlertConfig(
+        maxPlates: (json['maxPlates'] as num?)?.toDouble() ?? 10,
+        halfHourTokenLimit:
+            (json['halfHourTokenLimit'] as num?)?.toInt() ?? 20000000,
+        dailyCostLimitUsd:
+            (json['dailyCostLimitUsd'] as num?)?.toDouble() ?? 50,
+      );
+}
+
 /// All persisted user configuration.
 class AppSettings {
   final SourceKind source;
@@ -25,6 +69,8 @@ class AppSettings {
 
   /// User-editable per-tier token pricing.
   final PricingConfig pricing;
+
+  final UsageAlertConfig alerts;
 
   final UsagePeriod period;
   final UsageScope scope;
@@ -45,6 +91,7 @@ class AppSettings {
     this.dbPathOverride,
     this.cherry = const CherryConfig(),
     this.pricing = const PricingConfig(),
+    this.alerts = const UsageAlertConfig(),
     this.period = UsagePeriod.day,
     this.scope = UsageScope.global,
     this.projectPath,
@@ -65,6 +112,7 @@ class AppSettings {
     String? dbPathOverride,
     CherryConfig? cherry,
     PricingConfig? pricing,
+    UsageAlertConfig? alerts,
     UsagePeriod? period,
     UsageScope? scope,
     String? projectPath,
@@ -81,6 +129,7 @@ class AppSettings {
         dbPathOverride: dbPathOverride ?? this.dbPathOverride,
         cherry: cherry ?? this.cherry,
         pricing: pricing ?? this.pricing,
+        alerts: alerts ?? this.alerts,
         period: period ?? this.period,
         scope: scope ?? this.scope,
         projectPath: projectPath ?? this.projectPath,
@@ -100,6 +149,7 @@ class AppSettings {
         'rows': cherry.rows,
         'cols': cherry.cols,
         'pricing': pricing.toJson(),
+        'alerts': alerts.toJson(),
         'period': period.name,
         'scope': scope.name,
         'projectPath': projectPath,
@@ -113,7 +163,8 @@ class AppSettings {
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> j) => AppSettings(
-        source: _enumByName(SourceKind.values, j['source'], SourceKind.ccswitch),
+        source:
+            _enumByName(SourceKind.values, j['source'], SourceKind.ccswitch),
         dbPathOverride: j['dbPathOverride'] as String?,
         cherry: CherryConfig(
           dollarsPerCherry: (j['dollarsPerCherry'] as num?)?.toDouble() ?? 0.50,
@@ -123,12 +174,16 @@ class AppSettings {
         pricing: j['pricing'] is Map<String, dynamic>
             ? PricingConfig.fromJson(j['pricing'] as Map<String, dynamic>)
             : const PricingConfig(),
+        alerts: j['alerts'] is Map<String, dynamic>
+            ? UsageAlertConfig.fromJson(j['alerts'] as Map<String, dynamic>)
+            : const UsageAlertConfig(),
         period: _enumByName(UsagePeriod.values, j['period'], UsagePeriod.day),
         scope: _enumByName(UsageScope.values, j['scope'], UsageScope.global),
         projectPath: j['projectPath'] as String?,
-        language: _enumByName(AppLanguage.values, j['language'], AppLanguage.zh),
-        interaction: _enumByName(
-            InteractionMode.values, j['interaction'], InteractionMode.draggable),
+        language:
+            _enumByName(AppLanguage.values, j['language'], AppLanguage.zh),
+        interaction: _enumByName(InteractionMode.values, j['interaction'],
+            InteractionMode.draggable),
         scale: (j['scale'] as num?)?.toDouble() ?? 1.0,
         opacity: (j['opacity'] as num?)?.toDouble() ?? 1.0,
         pollSeconds: (j['pollSeconds'] as num?)?.toInt() ?? 3,
@@ -136,7 +191,8 @@ class AppSettings {
         windowY: (j['windowY'] as num?)?.toDouble(),
       );
 
-  static T _enumByName<T extends Enum>(List<T> values, Object? name, T fallback) {
+  static T _enumByName<T extends Enum>(
+      List<T> values, Object? name, T fallback) {
     for (final v in values) {
       if (v.name == name) return v;
     }

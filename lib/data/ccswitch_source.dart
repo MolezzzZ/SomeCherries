@@ -59,7 +59,7 @@ class CcSwitchSource extends UsageSource {
   @override
   Future<UsageSnapshot> read(UsageQuery query) async {
     final now = DateTime.now();
-    final start = periodStart(query.period, now);
+    final start = queryStart(query, now);
 
     if (!File(dbPath).existsSync()) {
       return UsageSnapshot.empty(query.period, start);
