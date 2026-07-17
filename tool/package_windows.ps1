@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$Version,
-    [switch]$SkipChecks
+    [switch]$SkipChecks,
+    [switch]$SkipRootDeploy
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,6 +31,13 @@ if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
     throw "Release executable not found: $executable"
 }
 
+# Keep the convenient executable at the repository root runnable. A Flutter
+# Windows executable is not standalone: its matching DLLs and data directory
+# must be deployed together from the same build.
+if (-not $SkipRootDeploy) {
+    Copy-Item -Path (Join-Path $bundleSource '*') -Destination $projectRoot -Recurse -Force
+}
+
 $distDir = Join-Path $projectRoot 'dist'
 $packageName = "CherryTokenMonitor-$Version-windows-x64"
 $stageDir = Join-Path $distDir $packageName
@@ -53,3 +61,6 @@ Set-Content -LiteralPath $hashPath -Value "$hash *$packageName.zip" -Encoding as
 
 Write-Host "Package: $archivePath"
 Write-Host "SHA-256: $hash"
+if (-not $SkipRootDeploy) {
+    Write-Host "Local runnable: $projectRoot\cherry_token_monitor.exe"
+}

@@ -102,7 +102,7 @@ bool FlutterWindow::OnCreate() {
             }
           }
 
-          if (overlay_hit_test_enabled_) {
+          if (overlay_hit_test_enabled_ && first_frame_rendered_) {
             StartOverlayMouseTimer();
             UpdateOverlayMouseState();
           } else {
@@ -121,8 +121,14 @@ bool FlutterWindow::OnCreate() {
         result->NotImplemented();
       });
 
-  flutter_controller_->engine()->SetNextFrameCallback([&]() {
+  flutter_controller_->engine()->SetNextFrameCallback([this]() {
+    first_frame_rendered_ = true;
     this->Show();
+    if (overlay_hit_test_enabled_) {
+      StartOverlayMouseTimer();
+      UpdateOverlayMouseState();
+      flutter_controller_->ForceRedraw();
+    }
   });
 
   // Flutter can complete the first frame before the "show window" callback is
@@ -342,6 +348,9 @@ void FlutterWindow::SetMousePassThrough(bool enabled) {
                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
                    SWP_FRAMECHANGED);
   mouse_pass_through_ = enabled;
+  if (flutter_controller_) {
+    flutter_controller_->ForceRedraw();
+  }
 }
 
 void FlutterWindow::SendHoverChanged(bool hovering) {
