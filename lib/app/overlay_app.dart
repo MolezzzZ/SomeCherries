@@ -79,6 +79,7 @@ class _OverlayHomeState extends State<OverlayHome>
   bool _clickThrough = false;
   bool _showSettings = false;
   bool _placingOverlayWindow = false;
+  bool _quitting = false;
   List<String> _detectedModels = const [];
   static const _hitTestChannel = MethodChannel('cherry_token_monitor/hit_test');
 
@@ -101,7 +102,15 @@ class _OverlayHomeState extends State<OverlayHome>
     _setupTray();
     _startPolling();
     _hitTestChannel.setMethodCallHandler(_handleNativeHitTestCall);
-    _configureOverlayHitTest(enabled: true);
+    // Enabling the Windows layered/click-through style before Flutter has
+    // presented its first frame leaves the transparent window visually blank
+    // until the first mouse-driven rebuild. Let the initial plate render first,
+    // then enable the native hit-test hook.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_configureOverlayHitTest(enabled: true));
+      }
+    });
   }
 
   @override
@@ -221,9 +230,33 @@ class _OverlayHomeState extends State<OverlayHome>
         _openSettings();
         break;
       case 'quit':
-        windowManager.destroy();
+        unawaited(_quit());
         break;
     }
+  }
+
+  Future<void> _quit() async {
+    if (_quitting) return;
+    _quitting = true;
+    _alertRequestSerial++;
+
+    final subscription = _sub;
+    _sub = null;
+    if (subscription != null) {
+      unawaited(subscription.cancel());
+    }
+
+    // On Windows windowManager.destroy() only posts WM_QUIT. That skips the
+    // normal WM_CLOSE/WM_DESTROY sequence and leaves Flutter to tear down the
+    // engine after the message loop has already stopped, which can take
+    // several seconds. Remove the tray icon first, then close the window via
+    // the normal native path so plugin and engine cleanup happens in order.
+    try {
+      await trayManager.destroy();
+    } catch (_) {
+      // The tray may be unavailable on this desktop; closing must still work.
+    }
+    await windowManager.close();
   }
 
   // ---- Window position persistence ------------------------------------------
@@ -468,7 +501,7 @@ class _OverlayHomeState extends State<OverlayHome>
         _setClickThrough(true);
         break;
       case 'quit':
-        windowManager.destroy();
+        await _quit();
         break;
     }
   }

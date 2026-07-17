@@ -48,6 +48,7 @@ class FlutterWindow : public Win32Window {
   WNDPROC original_child_proc_ = nullptr;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
       hit_test_channel_;
+  bool first_frame_rendered_ = false;
   bool overlay_hit_test_enabled_ = false;
   double top_pass_through_height_ = 0;
   double interactive_width_ = 0;
