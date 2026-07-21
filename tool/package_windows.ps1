@@ -26,7 +26,7 @@ if (-not $SkipChecks) {
 flutter build windows --release
 
 $bundleSource = Join-Path $projectRoot 'build\windows\x64\runner\Release'
-$executable = Join-Path $bundleSource 'cherry_token_monitor.exe'
+$executable = Join-Path $bundleSource 'SomeCherries.exe'
 if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
     throw "Release executable not found: $executable"
 }
@@ -39,7 +39,7 @@ if (-not $SkipRootDeploy) {
 }
 
 $distDir = Join-Path $projectRoot 'dist'
-$packageName = "CherryTokenMonitor-$Version-windows-x64"
+$packageName = "SomeCherries-$Version-windows-x64"
 $stageDir = Join-Path $distDir $packageName
 $archivePath = Join-Path $distDir "$packageName.zip"
 $hashPath = "$archivePath.sha256"
@@ -62,5 +62,5 @@ Set-Content -LiteralPath $hashPath -Value "$hash *$packageName.zip" -Encoding as
 Write-Host "Package: $archivePath"
 Write-Host "SHA-256: $hash"
 if (-not $SkipRootDeploy) {
-    Write-Host "Local runnable: $projectRoot\cherry_token_monitor.exe"
+    Write-Host "Local runnable: $projectRoot\SomeCherries.exe"
 }

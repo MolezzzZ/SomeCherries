@@ -33,7 +33,9 @@ migrate_working_dir/
 /build/
 /dist/
 
-# Legacy local Windows test bundle.
+# Local Windows runnable bundles.
+/SomeCherries.exe
+/some_cherries.exe
 /cherry_token_monitor.exe
 /*.dll
 /native_assets.json

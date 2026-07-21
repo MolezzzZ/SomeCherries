@@ -12,7 +12,7 @@ import 'usage_source.dart';
 /// Important realities discovered about this DB (see plan):
 ///  - `created_at` in `proxy_request_logs` is epoch **seconds**.
 ///  - Newer cc-switch versions compute per-request costs themselves, so we
-///    trust `total_cost_usd` and do not apply Cherry's own pricing table.
+///    trust `total_cost_usd` and do not apply SomeCherries' pricing table.
 ///  - Fresh data lives in `proxy_request_logs`; `usage_daily_rollups` can lag
 ///    during the current day, so the overlay aggregates live logs directly.
 ///  - `session_id` equals the Claude Code session jsonl filename (a UUID),

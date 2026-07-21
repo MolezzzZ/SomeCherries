@@ -81,7 +81,7 @@ class _OverlayHomeState extends State<OverlayHome>
   bool _placingOverlayWindow = false;
   bool _quitting = false;
   List<String> _detectedModels = const [];
-  static const _hitTestChannel = MethodChannel('cherry_token_monitor/hit_test');
+  static const _hitTestChannel = MethodChannel('some_cherries/hit_test');
 
   void _showTooltipFromPlate() {
     if (_showSettings || _hovering) return;
@@ -182,7 +182,7 @@ class _OverlayHomeState extends State<OverlayHome>
     try {
       final iconPath = await _materializeIcon();
       await trayManager.setIcon(iconPath);
-      await trayManager.setToolTip('Cherry token monitor');
+      await trayManager.setToolTip('SomeCherries');
       await _refreshTrayMenu();
     } catch (_) {
       // No system tray (e.g. some Linux WMs). Right-click menu still works

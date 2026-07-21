@@ -2,6 +2,17 @@
 
 本项目的用户可见变更记录于此。版本号遵循 [Semantic Versioning](https://semver.org/)。
 
+## [0.2.0-beta.1] - 2026-07-21
+
+首个以 **SomeCherries** 名称发布的公开测试版。
+
+### 变更
+
+- 项目、桌面应用、Windows 可执行文件和发布压缩包统一更名为 SomeCherries。
+- README 改用实际用量悬浮窗和设置界面截图展示程序。
+- 预发布版本现在会在 GitHub Releases 中自动标记为 Pre-release。
+- 包含 0.1.1 的 Windows 冷启动、退出和本地运行目录修复。
+
 ## [0.1.1] - 2026-07-17
 
 ### 修复

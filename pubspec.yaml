@@ -1,7 +1,7 @@
-name: cherry_token_monitor
-description: A cross-platform floating desktop pet that visualizes Claude Code token burn rate as a grid of cartoon cherries being eaten.
+name: some_cherries
+description: SomeCherries is a floating desktop monitor that visualizes Claude Code token usage as animated cherries.
 publish_to: "none"
-version: 0.1.1+2
+version: 0.2.0-beta.1+3
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

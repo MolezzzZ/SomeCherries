@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-import 'package:cherry_token_monitor/data/ccswitch_source.dart';
-import 'package:cherry_token_monitor/data/usage_source.dart';
-import 'package:cherry_token_monitor/app/settings.dart';
-import 'package:cherry_token_monitor/domain/cherry_state.dart';
-import 'package:cherry_token_monitor/domain/pricing.dart';
-import 'package:cherry_token_monitor/domain/usage.dart';
-import 'package:cherry_token_monitor/ui/cherry.dart';
-import 'package:cherry_token_monitor/ui/slow_burn.dart';
-import 'package:cherry_token_monitor/ui/usage_warning_lights.dart';
+import 'package:some_cherries/data/ccswitch_source.dart';
+import 'package:some_cherries/data/usage_source.dart';
+import 'package:some_cherries/app/settings.dart';
+import 'package:some_cherries/domain/cherry_state.dart';
+import 'package:some_cherries/domain/pricing.dart';
+import 'package:some_cherries/domain/usage.dart';
+import 'package:some_cherries/ui/cherry.dart';
+import 'package:some_cherries/ui/slow_burn.dart';
+import 'package:some_cherries/ui/usage_warning_lights.dart';
 
 void main() {
   group('CherryState.fromCost', () {
