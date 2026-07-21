@@ -1,4 +1,4 @@
-name: Release Windows app
+name: Release SomeCherries for Windows
 
 on:
   push:
@@ -48,7 +48,7 @@ jobs:
 
       - name: Build and test package
         shell: pwsh
-        run: .\tool\package_windows.ps1 -Version '${{ steps.version.outputs.version }}'
+        run: .\tool\package_windows.ps1 -Version '${{ steps.version.outputs.version }}' -SkipRootDeploy
 
       - name: Create or update GitHub Release
         shell: pwsh
@@ -57,14 +57,19 @@ jobs:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          $zip = "dist/CherryTokenMonitor-$env:RELEASE_VERSION-windows-x64.zip"
+          $zip = "dist/SomeCherries-$env:RELEASE_VERSION-windows-x64.zip"
           $hash = "$zip.sha256"
           gh release view $env:RELEASE_TAG *> $null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $env:RELEASE_TAG $zip $hash --clobber
           } else {
-            gh release create $env:RELEASE_TAG $zip $hash `
-              --title "Cherry Token Monitor $env:RELEASE_TAG" `
-              --generate-notes `
-              --verify-tag
+            $releaseArgs = @(
+              'release', 'create', $env:RELEASE_TAG, $zip, $hash,
+              '--title', "SomeCherries $env:RELEASE_TAG",
+              '--generate-notes', '--verify-tag'
+            )
+            if ($env:RELEASE_TAG.Contains('-')) {
+              $releaseArgs += '--prerelease'
+            }
+            & gh @releaseArgs
           }

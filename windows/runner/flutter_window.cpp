@@ -11,8 +11,8 @@
 #include "flutter/generated_plugin_registrant.h"
 
 namespace {
-constexpr const wchar_t kFlutterWindowProp[] = L"CherryTokenMonitorWindow";
-constexpr const char kHitTestChannel[] = "cherry_token_monitor/hit_test";
+constexpr const wchar_t kFlutterWindowProp[] = L"SomeCherriesWindow";
+constexpr const char kHitTestChannel[] = "some_cherries/hit_test";
 constexpr const char kSetOverlayHitTestMethod[] = "setOverlayHitTest";
 constexpr UINT_PTR kOverlayMouseTimer = 9001;
 constexpr UINT kOverlayMouseTimerMs = 24;

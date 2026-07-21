@@ -1,19 +1,30 @@
-# Cherry Token Monitor
+# SomeCherries
 
-<p align="center">
-  <img src="assets/cherry_pair.png" width="150" alt="Cherry Token Monitor 樱桃图标">
-</p>
+> **Beta 测试版**：当前版本用于公开测试，欢迎通过 GitHub Issues 反馈问题。
 
 一个常驻桌面的 Claude Code / cc-switch Token 用量监视器。消费金额会变成一盘樱桃：随着 Token 消耗，樱桃被慢慢吃掉，并通过三色告警灯提示当前用量、近 30 分钟速度和今日消费。
 
-目前提供可直接使用的 **Windows x64** 版本，界面支持中文和 English。
+## 实际界面
+
+<table>
+  <tr>
+    <td align="center"><strong>用量悬浮窗</strong></td>
+    <td align="center"><strong>设置界面</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/usage-overview.png" alt="SomeCherries 用量悬浮窗实际截图" width="360"></td>
+    <td><img src="docs/screenshots/settings.png" alt="SomeCherries 设置界面实际截图" width="480"></td>
+  </tr>
+</table>
+
+目前提供可直接使用的 **Windows x64 Beta** 版本，界面支持中文和 English。
 
 ## 下载与安装
 
-1. 打开 [Releases](https://github.com/MolezzzZ/cherry-token-monitor/releases/latest)。
-2. 下载 `CherryTokenMonitor-*-windows-x64.zip`。
+1. 打开 [SomeCherries v0.2.0-beta.1](https://github.com/MolezzzZ/SomeCherries/releases/tag/v0.2.0-beta.1)。
+2. 下载 `SomeCherries-0.2.0-beta.1-windows-x64.zip`。
 3. 将压缩包**完整解压**到任意文件夹。
-4. 双击 `cherry_token_monitor.exe`。
+4. 双击 `SomeCherries.exe`。
 
 > 请勿只复制 exe。程序运行还需要同目录下的 DLL 和 `data` 文件夹。Windows 首次运行若显示 SmartScreen 提示，可在确认下载来源后选择“更多信息”→“仍要运行”。
 
@@ -37,7 +48,7 @@
 不使用 cc-switch 时，可在设置中选择“手动”，并把 `manual_usage.json` 放到：
 
 ```text
-%APPDATA%\MolezzzZ\Cherry Token Monitor\manual_usage.json
+%APPDATA%\MolezzzZ\SomeCherries\manual_usage.json
 ```
 
 示例：
@@ -84,7 +95,7 @@ flutter build windows --release
 可运行文件位于：
 
 ```text
-build\windows\x64\runner\Release\
+build\windows\x64\runner\Release\SomeCherries.exe
 ```
 
 生成与 GitHub Release 相同格式的压缩包：
@@ -97,11 +108,11 @@ build\windows\x64\runner\Release\
 
 ## 发布维护
 
-版本号以 `pubspec.yaml` 为准。完成验证后推送 `v*` 标签，GitHub Actions 会自动构建 Windows x64 压缩包、生成 SHA-256，并创建或更新 Release：
+版本号以 `pubspec.yaml` 为准。完成验证后推送 `v*` 标签，GitHub Actions 会自动构建 Windows x64 压缩包、生成 SHA-256，并创建 Release；含预发布后缀的标签会标记为 Pre-release：
 
 ```powershell
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0-beta.1
+git push origin v0.2.0-beta.1
 ```
 
 版本历史见 [CHANGELOG.md](CHANGELOG.md)。
