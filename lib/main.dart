@@ -14,9 +14,17 @@ Future<void> main() async {
 
   final repo = SettingsRepo();
   final settings = await repo.load();
+  final implicitView = WidgetsBinding.instance.platformDispatcher.implicitView;
+  final textScaleFactor = implicitView == null
+      ? 1.0
+      : MediaQueryData.fromView(implicitView).textScaler.scale(12) / 12;
+  final tooltipReserve = tooltipReserveFor(textScaleFactor);
 
   final size = Platform.isWindows
-      ? computeTooltipWindowSize(settings)
+      ? computeTooltipWindowSize(
+          settings,
+          textScaleFactor: textScaleFactor,
+        )
       : computeWindowSize(settings);
   final options = WindowOptions(
     size: size,
@@ -35,16 +43,23 @@ Future<void> main() async {
     if (!Platform.isLinux) {
       await windowManager.setHasShadow(false);
     }
-    await _positionWindow(settings);
+    await _positionWindow(settings, tooltipReserve);
     await windowManager.show();
   });
 
-  runApp(OverlayApp(repo: repo, initialSettings: settings));
+  runApp(OverlayApp(
+    repo: repo,
+    initialSettings: settings,
+    initialTextScaleFactor: textScaleFactor,
+  ));
 }
 
-Future<void> _positionWindow(AppSettings s) async {
+Future<void> _positionWindow(
+  AppSettings s,
+  double tooltipReserve,
+) async {
   if (s.windowX != null && s.windowY != null) {
-    final y = Platform.isWindows ? s.windowY! - kTooltipReserve : s.windowY!;
+    final y = Platform.isWindows ? s.windowY! - tooltipReserve : s.windowY!;
     await windowManager.setPosition(Offset(s.windowX!, y));
   } else {
     // Snap to bottom-right of the primary display on first run.

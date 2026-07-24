@@ -58,14 +58,29 @@ class TooltipCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('$periodLabel · ${l.burn}',
+                Expanded(
+                  child: Text(
+                    '$periodLabel · ${l.burn}',
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Color(0xFFFF8FA0))),
-                Text('\$${snapshot.totalCostUsd.toStringAsFixed(2)}',
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF8FA0),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    '\$${snapshot.totalCostUsd.toStringAsFixed(2)}',
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.white)),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -127,7 +142,14 @@ class TooltipCard extends StatelessWidget {
               child:
                   Text(label, style: style, overflow: TextOverflow.ellipsis)),
           const SizedBox(width: 10),
-          Text(value, style: style),
+          Flexible(
+            child: Text(
+              value,
+              style: style,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+            ),
+          ),
         ],
       ),
     );
