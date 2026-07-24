@@ -16,10 +16,23 @@ const double kWarningLightsGap = 4;
 const double kCellWidthFactor = 1.0;
 const double kCellHeightFactor = 1.234;
 
-/// Vertical room reserved above the plate so the hover tooltip isn't clipped
-/// by the (transparent) window bounds.
-const double kTooltipReserve = 320;
+/// Base vertical room reserved above the plate for the hover tooltip.
+///
+/// The card can contain four model rows. Its maximum normal-text height is
+/// about 358 logical pixels, so the old 320-pixel reserve clipped its rounded
+/// top edge. Keep extra room for the shadow and small font-metric differences.
+const double kTooltipReserve = 380;
 const double kMinWidth = 250;
+
+/// Text accessibility scaling changes Flutter layout in logical pixels,
+/// independently of the monitor's DPI. Scale the transparent reserve with it
+/// so a larger card still remains inside the native window.
+double tooltipReserveFor(double textScaleFactor) {
+  final safeScale = textScaleFactor.isFinite
+      ? textScaleFactor.clamp(1.0, 3.0).toDouble()
+      : 1.0;
+  return kTooltipReserve * safeScale;
+}
 
 Size gridPixelSize(AppSettings s) {
   final size = kBaseCherrySize * s.scale;
@@ -49,9 +62,15 @@ Size computeWindowSize(AppSettings s) {
 }
 
 /// Temporary expanded window while hovering the plate, giving the tooltip room
-/// to render above the cherries. The top edge is moved up by [kTooltipReserve],
-/// keeping the plate fixed on screen.
-Size computeTooltipWindowSize(AppSettings s) {
+/// to render above the cherries. The top edge is moved up by the value returned
+/// by [tooltipReserveFor], keeping the plate fixed on screen.
+Size computeTooltipWindowSize(
+  AppSettings s, {
+  double textScaleFactor = 1.0,
+}) {
   final base = computeWindowSize(s);
-  return Size(base.width, base.height + kTooltipReserve);
+  return Size(
+    base.width,
+    base.height + tooltipReserveFor(textScaleFactor),
+  );
 }

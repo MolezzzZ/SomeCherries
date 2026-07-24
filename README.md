@@ -1,63 +1,67 @@
 # SomeCherries
 
-> **Beta 测试版**：当前版本用于公开测试，欢迎通过 GitHub Issues 反馈问题。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-一个常驻桌面的 Claude Code / cc-switch Token 用量监视器。消费金额会变成一盘樱桃：随着 Token 消耗，樱桃被慢慢吃掉，并通过三色告警灯提示当前用量、近 30 分钟速度和今日消费。
+> **Beta:** This project is currently in public testing. Feedback and bug reports are welcome through GitHub Issues.
 
-## 实际界面
+SomeCherries is an always-on desktop monitor for token usage recorded by [cc-switch](https://github.com/farion1231/cc-switch). It turns billed usage into a plate of cherries: as tokens are consumed, the cherries are gradually eaten, while three warning lights track current usage, the last 30 minutes, and today's spend.
+
+SomeCherries counts every usage and billing entry available in cc-switch. It works whether the traffic comes from a relay/provider API or an official subscription—as long as cc-switch records the usage, SomeCherries can include it in the statistics.
+
+## Screenshots
 
 <table>
   <tr>
-    <td align="center"><strong>用量悬浮窗</strong></td>
-    <td align="center"><strong>设置界面</strong></td>
+    <td align="center"><strong>Usage overlay</strong></td>
+    <td align="center"><strong>Settings</strong></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/usage-overview.png" alt="SomeCherries 用量悬浮窗实际截图" width="360"></td>
-    <td><img src="docs/screenshots/settings.png" alt="SomeCherries 设置界面实际截图" width="480"></td>
+    <td><img src="docs/screenshots/usage-overview-en.png" alt="SomeCherries usage overlay" width="360"></td>
+    <td><img src="docs/screenshots/settings-en.png" alt="SomeCherries settings window" width="480"></td>
   </tr>
 </table>
 
-目前提供可直接使用的 **Windows x64 Beta** 版本，界面支持中文和 English。
+A ready-to-use **Windows x64 Beta** build is available. The interface supports both English and Chinese.
 
-## 下载与安装
+## Download and install
 
-1. 打开 [SomeCherries v0.2.0-beta.1](https://github.com/MolezzzZ/SomeCherries/releases/tag/v0.2.0-beta.1)。
-2. 下载 `SomeCherries-0.2.0-beta.1-windows-x64.zip`。
-3. 将压缩包**完整解压**到任意文件夹。
-4. 双击 `SomeCherries.exe`。
+1. Open the [SomeCherries v0.2.0-beta.1 release](https://github.com/MolezzzZ/SomeCherries/releases/tag/v0.2.0-beta.1).
+2. Download `SomeCherries-0.2.0-beta.1-windows-x64.zip`.
+3. **Extract the complete archive** into any folder.
+4. Run `SomeCherries.exe`.
 
-> 请勿只复制 exe。程序运行还需要同目录下的 DLL 和 `data` 文件夹。Windows 首次运行若显示 SmartScreen 提示，可在确认下载来源后选择“更多信息”→“仍要运行”。
+> Do not copy the EXE by itself. The application also requires the DLL files and the `data` directory shipped beside it. If Windows SmartScreen appears on first launch, verify the download source, select **More info**, and then choose **Run anyway**.
 
-## 使用方法
+## Usage
 
-程序默认读取：
+By default, SomeCherries reads:
 
 ```text
 %USERPROFILE%\.cc-switch\cc-switch.db
 ```
 
-确保 [cc-switch](https://github.com/farion1231/cc-switch) 已产生用量记录即可。首次启动时悬浮窗出现在主屏幕右下角：
+Once cc-switch has created usage records, launch SomeCherries and the overlay will appear in the bottom-right corner of the primary display.
 
-- 拖动樱桃盘可改变位置；悬停可查看 Token 与费用详情。
-- 右键樱桃盘或系统托盘图标可打开设置、切换点击穿透或退出。
-- 设置中可修改统计周期、项目范围、樱桃单价、布局、透明度、刷新频率和告警阈值。
-- 如果数据库不在默认位置，请在“设置 → 数据源”填写 `cc-switch.db` 的绝对路径。
+- Drag the cherry plate to move it; hover over it to inspect token and cost details.
+- Right-click the plate or use the system tray icon to open Settings, enable click-through mode, or quit.
+- Settings include the reporting period, project scope, price per cherry, layout, opacity, refresh interval, and alert thresholds.
+- If your database is elsewhere, enter the absolute path to `cc-switch.db` under **Settings → Data source**.
 
-### 手动数据源
+### Manual data source
 
-不使用 cc-switch 时，可在设置中选择“手动”，并把 `manual_usage.json` 放到：
+If you are not using cc-switch, select **Manual** in Settings and place `manual_usage.json` at:
 
 ```text
 %APPDATA%\MolezzzZ\SomeCherries\manual_usage.json
 ```
 
-示例：
+Example:
 
 ```json
 {
   "entries": [
     {
-      "model": "claude-sonnet-4-6",
+      "model": "gpt-5.6-sol",
       "input": 1000,
       "output": 500,
       "cacheRead": 0,
@@ -68,22 +72,28 @@
 }
 ```
 
-`ts` 是 Unix 时间戳（秒）。手动模式会使用设置中的模型价格计算费用。
+`ts` is a Unix timestamp in seconds. Manual mode calculates cost using the model prices configured in Settings.
 
-## 功能
+## Features
 
-- 将消费金额映射为会逐渐被吃掉的樱桃盘
-- 当前用量、近 30 分钟 Token、今日消费三组告警灯
-- 日 / 周 / 月 / 全部统计周期
-- 全局或当前 Claude Code 项目范围
-- 中文 / English 界面
-- 可拖动、置顶、透明度和点击穿透
-- 系统托盘菜单与配置持久化
-- cc-switch SQLite 只读访问，不修改原数据库
+- Visualizes billed usage as a plate of gradually eaten cherries
+- Includes all usage recorded by cc-switch, across relay APIs and official subscriptions
+- Three warning lights for current usage, tokens used in the last 30 minutes, and today's spend
+- Daily, weekly, monthly, and all-time reporting periods
+- Global or current-project scope
+- English and Chinese interface
+- Draggable, always-on-top overlay with opacity and click-through controls
+- System tray menu and persistent configuration
+- Read-only access to the cc-switch SQLite database
+- Optional manual JSON source with configurable model pricing
 
-## 从源码构建
+## Build from source
 
-需要 Flutter stable（当前使用 Flutter 3.44.4）、Visual Studio 2022 的“使用 C++ 的桌面开发”工作负载，以及 Windows 10/11 SDK。
+Requirements:
+
+- Flutter stable (currently Flutter 3.44.4)
+- Visual Studio 2022 with the **Desktop development with C++** workload
+- Windows 10/11 SDK
 
 ```powershell
 flutter pub get
@@ -92,35 +102,35 @@ flutter test
 flutter build windows --release
 ```
 
-可运行文件位于：
+The runnable application is written to:
 
 ```text
 build\windows\x64\runner\Release\SomeCherries.exe
 ```
 
-生成与 GitHub Release 相同格式的压缩包：
+To create the same archive format used by GitHub Releases:
 
 ```powershell
 .\tool\package_windows.ps1
 ```
 
-产物及 SHA-256 校验文件会写入 `dist\`。
+The archive and its SHA-256 checksum are written to `dist\`.
 
-## 发布维护
+## Release maintenance
 
-版本号以 `pubspec.yaml` 为准。完成验证后推送 `v*` 标签，GitHub Actions 会自动构建 Windows x64 压缩包、生成 SHA-256，并创建 Release；含预发布后缀的标签会标记为 Pre-release：
+The version is defined in `pubspec.yaml`. After validation, pushing a `v*` tag triggers GitHub Actions to build the Windows x64 archive, generate its SHA-256 checksum, and create a Release. Tags containing a prerelease suffix are marked as prereleases.
 
 ```powershell
 git tag v0.2.0-beta.1
 git push origin v0.2.0-beta.1
 ```
 
-版本历史见 [CHANGELOG.md](CHANGELOG.md)。
+See [CHANGELOG.md](CHANGELOG.md) for the version history.
 
-## 隐私
+## Privacy
 
-程序只在本机读取 cc-switch 数据库或手动 JSON，不上传 Token 记录。数据库以只读方式打开。
+SomeCherries reads the cc-switch database or manual JSON file locally. Token usage records are never uploaded, and the SQLite database is opened read-only.
 
-## 许可
+## License
 
-当前仓库未附带开源许可证；未经明确授权，不授予复制、修改或再分发源代码的权利。Release 中的程序供最终用户下载使用。
+This repository does not currently include an open-source license. No permission to copy, modify, or redistribute the source code is granted unless explicitly stated. Release builds are provided for end-user use.

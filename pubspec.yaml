@@ -1,5 +1,5 @@
 name: some_cherries
-description: SomeCherries is a floating desktop monitor that visualizes Claude Code token usage as animated cherries.
+description: SomeCherries is a floating desktop monitor that visualizes token usage recorded by cc-switch as animated cherries.
 publish_to: "none"
 version: 0.2.0-beta.1+3
 

@@ -26,11 +26,13 @@ import 'window_sizing.dart';
 class OverlayApp extends StatelessWidget {
   final SettingsRepo repo;
   final AppSettings initialSettings;
+  final double initialTextScaleFactor;
 
   const OverlayApp({
     super.key,
     required this.repo,
     required this.initialSettings,
+    this.initialTextScaleFactor = 1.0,
   });
 
   @override
@@ -46,7 +48,11 @@ class OverlayApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      home: OverlayHome(repo: repo, initialSettings: initialSettings),
+      home: OverlayHome(
+        repo: repo,
+        initialSettings: initialSettings,
+        initialTextScaleFactor: initialTextScaleFactor,
+      ),
     );
   }
 }
@@ -54,11 +60,13 @@ class OverlayApp extends StatelessWidget {
 class OverlayHome extends StatefulWidget {
   final SettingsRepo repo;
   final AppSettings initialSettings;
+  final double initialTextScaleFactor;
 
   const OverlayHome({
     super.key,
     required this.repo,
     required this.initialSettings,
+    this.initialTextScaleFactor = 1.0,
   });
 
   @override
@@ -80,8 +88,11 @@ class _OverlayHomeState extends State<OverlayHome>
   bool _showSettings = false;
   bool _placingOverlayWindow = false;
   bool _quitting = false;
+  late double _textScaleFactor;
   List<String> _detectedModels = const [];
   static const _hitTestChannel = MethodChannel('some_cherries/hit_test');
+
+  double get _tooltipReserve => tooltipReserveFor(_textScaleFactor);
 
   void _showTooltipFromPlate() {
     if (_showSettings || _hovering) return;
@@ -96,6 +107,7 @@ class _OverlayHomeState extends State<OverlayHome>
   void initState() {
     super.initState();
     _settings = widget.initialSettings;
+    _textScaleFactor = widget.initialTextScaleFactor;
     trayManager.addListener(this);
     windowManager.addListener(this);
     _source = _buildSource(_settings);
@@ -111,6 +123,23 @@ class _OverlayHomeState extends State<OverlayHome>
         unawaited(_configureOverlayHitTest(enabled: true));
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final nextTextScaleFactor = MediaQuery.textScalerOf(context).scale(12) / 12;
+    if ((nextTextScaleFactor - _textScaleFactor).abs() < 0.001) return;
+
+    final previousReserve = _tooltipReserve;
+    _textScaleFactor = nextTextScaleFactor;
+    if (Platform.isWindows && !_showSettings) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          unawaited(_resizeForTextScale(previousReserve));
+        }
+      });
+    }
   }
 
   @override
@@ -266,7 +295,7 @@ class _OverlayHomeState extends State<OverlayHome>
     if (_showSettings || _placingOverlayWindow) return;
     final pos = await windowManager.getPosition();
     final normalTopLeft =
-        Platform.isWindows ? Offset(pos.dx, pos.dy + kTooltipReserve) : pos;
+        Platform.isWindows ? Offset(pos.dx, pos.dy + _tooltipReserve) : pos;
     _settings = _settings.copyWith(
         windowX: normalTopLeft.dx, windowY: normalTopLeft.dy);
     await widget.repo.save(_settings);
@@ -317,17 +346,39 @@ class _OverlayHomeState extends State<OverlayHome>
     _placingOverlayWindow = true;
     try {
       final overlaySize = Platform.isWindows
-          ? computeTooltipWindowSize(_settings)
+          ? computeTooltipWindowSize(
+              _settings,
+              textScaleFactor: _textScaleFactor,
+            )
           : computeWindowSize(_settings);
       await windowManager.setSize(overlaySize);
       if (_settings.windowX != null && _settings.windowY != null) {
         final y = Platform.isWindows
-            ? _settings.windowY! - kTooltipReserve
+            ? _settings.windowY! - _tooltipReserve
             : _settings.windowY!;
         await windowManager.setPosition(Offset(_settings.windowX!, y));
       } else {
         await windowManager.setAlignment(Alignment.bottomRight);
       }
+    } finally {
+      _placingOverlayWindow = false;
+    }
+    await _configureOverlayHitTest(enabled: true);
+  }
+
+  Future<void> _resizeForTextScale(double previousReserve) async {
+    if (_showSettings || _placingOverlayWindow) return;
+    _placingOverlayWindow = true;
+    try {
+      final pos = await windowManager.getPosition();
+      await windowManager.setSize(computeTooltipWindowSize(
+        _settings,
+        textScaleFactor: _textScaleFactor,
+      ));
+      await windowManager.setPosition(Offset(
+        pos.dx,
+        pos.dy + previousReserve - _tooltipReserve,
+      ));
     } finally {
       _placingOverlayWindow = false;
     }
@@ -352,7 +403,7 @@ class _OverlayHomeState extends State<OverlayHome>
     try {
       await _hitTestChannel.invokeMethod<void>('setOverlayHitTest', {
         'enabled': enabled,
-        'topPassThroughHeight': kTooltipReserve,
+        'topPassThroughHeight': _tooltipReserve,
         'interactiveWidth': content.width,
         'interactiveHeight': content.height,
         'bottomPadding': kOuterPadding,
